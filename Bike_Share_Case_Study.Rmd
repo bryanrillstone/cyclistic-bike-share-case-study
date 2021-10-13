@@ -1,0 +1,813 @@
+---
+title: 'Case Study 1: How does a bike-share navigate speedy success?'
+author: "Bryan Rillstone"
+date: "10/12/2021"
+output:
+  html_document: default
+  pdf_document: default
+---
+
+# Setting up the environment\
+The first step is to load the necessary packages for the project. In the code chunk
+below I use the `library()` function to load the packages. For this project I am using the 
+tidyverse, lubridate, and ggplt2 packages. I will use the tidyverse package to
+import, wrangle, clean, and analyze the data, the lubridate package to make 
+working with dates easier, and the ggplot2 package to generate visualizations 
+following my analysis.
+```{r loading packages, echo = TRUE , message = FALSE}
+library(tidyverse)
+library(lubridate)
+library(ggplot2)
+```
+
+# Import raw data\
+Data was made available by the City of Chicago's Divvy bicycle sharing service 
+operated by Motivate International Inc. Data is being used under the [data license
+agreement](https://www.divvybikes.com/data-license-agreement). All data files
+were retrieved from Divvy at https://divvy-tripdata.s3.amazonaws.com/index.html.
+
+In the code chunk below I use the `read.csv()` function to import monthly trip
+data from csv files into dataframes. I will start with dataframes for each month
+but will combine all data into a single dataframe in a later step.
+```{r importing data, echo = T, message = F}
+m10_2020 <- read_csv("202010-divvy-tripdata.csv")
+m11_2020 <- read_csv("202011-divvy-tripdata.csv")
+m12_2020 <- read_csv("202012-divvy-tripdata.csv")
+m01_2021 <- read_csv("202101-divvy-tripdata.csv")
+m02_2021 <- read_csv("202102-divvy-tripdata.csv")
+m03_2021 <- read_csv("202103-divvy-tripdata.csv")
+m04_2021 <- read_csv("202104-divvy-tripdata.csv")
+m05_2021 <- read_csv("202105-divvy-tripdata.csv")
+m06_2021 <- read_csv("202106-divvy-tripdata.csv")
+m07_2021 <- read_csv("202107-divvy-tripdata.csv")
+m08_2021 <- read_csv("202108-divvy-tripdata.csv")
+m09_2021 <- read_csv("202109-divvy-tripdata.csv")
+```
+
+# Data wrangling, merging, and cleaning\
+Now that I have imported the data I will start checking the individual dataframes 
+for inconsistencies that would inhibit merging the dataframes and correcting any inconsistencies.
+After that I will merge the dataframes into a single dataframe, remove irrelevant 
+data, correct inconsistencies in the data, calculate and add new variables, 
+and remove "bad" data.
+
+### Reviewing dataframes for inconsistencies\
+In the code chunk below I use the `colnames()`function to look at the column 
+names in each dataframe. I review the column names to identify any inconsistencies. 
+```{r colnames}
+colnames(m10_2020)
+colnames(m11_2020)
+colnames(m12_2020)
+colnames(m01_2021)
+colnames(m02_2021)
+colnames(m03_2021)
+colnames(m04_2021)
+colnames(m05_2021)
+colnames(m06_2021)
+colnames(m07_2021)
+colnames(m08_2021)
+colnames(m09_2021)
+```
+
+I can see that the column names are consistent across the dataframes so we can 
+move on to check the data types.
+
+### Checking column data types\
+In the code chunk below I use the `str()` function
+to check the data types in each column of the dataframes.
+```{r checking data types}
+str(m10_2020)
+str(m11_2020)
+str(m12_2020)
+str(m01_2021)
+str(m02_2021)
+str(m03_2021)
+str(m04_2021)
+str(m05_2021)
+str(m06_2021)
+str(m07_2021)
+str(m08_2021)
+str(m09_2021)
+```
+
+### Correct inconsistencies with column data types\
+The results from the `str()` function showed that the 'start_station_id' and 'end_station_id'
+columns for m10_2020 and m11_2020 dataframes are doubles. We will want to change 
+these to character to be consistent with the the other dataframe.
+
+In the code chunk below I use the `mutate()` and `as.character()` functions
+to change the data type for the 'start_station_id' and 'end_station_id' columns in the
+m10_2020 and m11_2020 dataframes.
+```{r change data type}
+m10_2020 <- mutate(m10_2020, start_station_id = as.character(start_station_id),
+                   end_station_id = as.character(end_station_id))
+
+m11_2020 <- mutate(m11_2020, start_station_id = as.character(start_station_id),
+                   end_station_id = as.character(end_station_id))
+```
+
+### Dropping "bad" data\
+I was having trouble removing "bad" data from teh combined data frame so I will 
+drop "bad" data from each data frame prior to combing them into a single data
+frame.\
+
+There are two scenarios where data is considered "bad". The first is
+when bikes were removed from service for a testing. This is denoted in the
+'start_station_name' column by 'WATSON TESTING - DIVVY'. The second is when 
+the 'ride_length' is negative. More on the second scenario in a later step.\
+
+In the code chunk below I create new dataframes by using operators to 
+select all records that do NOT include 'WATSON TESTING - DIVVY' in the 'start_station_name' column 
+and then drop rows containing all NAs. The new dataframes is are v2 and v3 for each month.
+```{r}
+m10_2020_v2 <- m10_2020[!(m10_2020$start_station_name == "WATSON TESTING - DIVVY"),]
+m10_2020_v3 <-  m10_2020_v2[rowSums(is.na(m10_2020_v2[ , 0:ncol(m10_2020_v2)])) < ncol(m10_2020_v2), ]
+
+m11_2020_v2 <- m11_2020[!(m11_2020$start_station_name == "WATSON TESTING - DIVVY"),]
+m11_2020_v3 <-  m11_2020_v2[rowSums(is.na(m11_2020_v2[ , 0:ncol(m11_2020_v2)])) < ncol(m11_2020_v2), ]
+
+m12_2020_v2 <- m12_2020[!(m12_2020$start_station_name == "WATSON TESTING - DIVVY"),]
+m12_2020_v3 <-  m12_2020_v2[rowSums(is.na(m12_2020_v2[ , 0:ncol(m12_2020_v2)])) < ncol(m12_2020_v2), ]
+
+m01_2021_v2 <- m01_2021[!(m01_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m01_2021_v3 <-  m01_2021_v2[rowSums(is.na(m01_2021_v2[ , 0:ncol(m01_2021_v2)])) < ncol(m01_2021_v2), ]
+
+m02_2021_v2 <- m02_2021[!(m02_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m02_2021_v3 <-  m02_2021_v2[rowSums(is.na(m02_2021_v2[ , 0:ncol(m02_2021_v2)])) < ncol(m02_2021_v2), ]
+
+m03_2021_v2 <- m03_2021[!(m03_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m03_2021_v3 <-  m03_2021_v2[rowSums(is.na(m03_2021_v2[ , 0:ncol(m03_2021_v2)])) < ncol(m03_2021_v2), ]
+
+m04_2021_v2 <- m04_2021[!(m04_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m04_2021_v3 <-  m04_2021_v2[rowSums(is.na(m04_2021_v2[ , 0:ncol(m04_2021_v2)])) < ncol(m04_2021_v2), ]
+
+m05_2021_v2 <- m05_2021[!(m05_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m05_2021_v3 <-  m05_2021_v2[rowSums(is.na(m05_2021_v2[ , 0:ncol(m05_2021_v2)])) < ncol(m05_2021_v2), ]
+
+m06_2021_v2 <- m06_2021[!(m06_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m06_2021_v3 <-  m06_2021_v2[rowSums(is.na(m06_2021_v2[ , 0:ncol(m06_2021_v2)])) < ncol(m06_2021_v2), ]
+
+m07_2021_v2 <- m07_2021[!(m07_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m07_2021_v3 <-  m07_2021_v2[rowSums(is.na(m07_2021_v2[ , 0:ncol(m07_2021_v2)])) < ncol(m07_2021_v2), ]
+
+m08_2021_v2 <- m08_2021[!(m08_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m08_2021_v3 <-  m08_2021_v2[rowSums(is.na(m08_2021_v2[ , 0:ncol(m08_2021_v2)])) < ncol(m08_2021_v2), ]
+
+m09_2021_v2 <- m09_2021[!(m09_2021$start_station_name == "WATSON TESTING - DIVVY"),]
+m09_2021_v3 <-  m09_2021_v2[rowSums(is.na(m09_2021_v2[ , 0:ncol(m09_2021_v2)])) < ncol(m09_2021_v2), ]
+```
+
+The amount of "bad" testing and NA data removed included 523,467 records or 
+approximately 0.1% of the total records.
+
+### Combine data frames into a single data frame\
+Now that I have corrected the column names and data types inconsistencies its time to
+combine the quarterly dataframes into a single dataframe. This will make the
+analysis much easier!
+
+In the code chunk below I use the `bind_rows()` function to combine
+all the dataframes. The new dataframe is called all_trips.
+```{r combine df}
+all_trips <- bind_rows(m10_2020_v3, m11_2020_v3, m12_2020_v3, m01_2021_v3, 
+                       m02_2021_v3, m03_2021_v3, m04_2021_v3, m05_2021_v3, 
+                       m06_2021_v3, m07_2021_v3, m08_2021_v3, m09_2021_v3)
+```
+
+### Remove irrelevant data from the dataframe\
+The combined dataframe has a few columns that are irrelevant to my analysis so I
+will remove them from the dataframe.
+
+In the code chunk below I use the `select()` and `c()` functions to 
+remove irrelevant data columns from the dataframe.
+```{r remove irrelevant}
+all_trips <- all_trips %>% 
+  select(-c(start_lat, start_lng, end_lat, end_lng))
+```
+
+### Adding data\
+Now that I have everything consistent and irrelevant data has been removed it is time
+to add some data. I want to calculate a new variable called 'ride_length' and 
+add new columns for 'date', 'month', 'day', 'year, 'day_of_week', and 'hour'. These new
+columns will allow me to aggregate the data for different time periods.
+
+In the code chunk below I use the `as.Date()`, `format()`, and `difftime()`
+functions to calculate new variables and add new columns.
+```{r adding columns}
+all_trips$date <- as.Date(all_trips$started_at)
+all_trips$month <- format(as.Date(all_trips$date), "%b")
+all_trips$day <- format(as.Date(all_trips$date), "%d")
+all_trips$year <- format(as.Date(all_trips$date), "%Y")
+all_trips$day_of_week <- format(as.Date(all_trips$date), "%A")
+all_trips$ride_length <- difftime(all_trips$ended_at, all_trips$started_at)
+all_trips$hour <- format(all_trips$started_at, "%H")
+```
+
+I am also using the `as.numeric()` function to convert 'ride_length' to numeric
+so I can run calculations on it during my analysis later.
+```{r converting numeric}
+all_trips$ride_length <- as.numeric(as.character(all_trips$ride_length))
+```
+
+### Dropping "bad" data\
+One last step in the data wrangling, merging, and cleaning process, removing the last of the
+"bad" data. This is where I will drop 'ride_length' data that is negative.
+
+In the code chunk below I create a new dataframe by using operators to 
+select all records that have a 'ride_length' less than zero (0). The new dataframe is called all_trips_v2.
+```{r new df}
+all_trips_v2 <- all_trips[!(all_trips$ride_length < 0),]
+```
+
+The amount of negative 'ride_length' "bad" data removed was minimal and included 3,245 records or 
+approximately 0.0007% of the total records.
+
+# Analysis\
+Time to start my analysis! The goal of my analysis is to identify 
+differences between customer types (casual vs. member). These insights will help 
+design marketing strategies to convert casual riders into annual members.
+
+### Comparing statistical values for each customer type\
+The first thing I am going to look at are basic statistical values for each customer type.
+I am going to look at the mean, median, max, and min so I can start getting
+an idea of data distribution.
+
+In the code chunk below I use the `aggregate()` function in conjunction with
+the `mean()`, `median()`, `max()`, and `min()` functions to calculate basic
+statistical values for each customer type based on the data.
+```{r basic stats}
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = mean)
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = median)
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = max)
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = min)
+all_trips_v2 %>% 
+  group_by(member_casual) %>% 
+  summarise(number_of_rides = n())
+```
+
+Based on these results, the customer type usages are similar when it comes 
+to the maximum and minimum ride duration but they differ greatly when it comes to
+average ride duration and number of rides. The average ride duration for casual 
+customers is more than 4 times the average ride duration for annual members. While annual members 
+take more than 3 times as many rides as casual riders and account for more 
+than 75% of the total rides.
+
+### Top 10 start and end stations for each customer type\
+Now I will take a look to see which start and end stations are most popular for each
+customer type.
+
+In the below code chunk I use the `group_by()`, `summarize()`, `arrange()`, 
+`filter()`, and `slice()` functions to manipulate my data and the `ggplot()`, 
+`geom_col()`, `reorder()`, and `coord_flip()` functions to generate and format visualizations.
+```{r top 10 stations}
+all_trips_v2 %>% 
+  group_by(member_casual, start_station_name) %>% 
+  summarise(station_usage = n()) %>% 
+  arrange(desc(station_usage)) %>% 
+  filter(member_casual == "casual") %>% 
+  slice(1:10) %>% 
+  ggplot(aes(x = reorder(start_station_name, station_usage), y = station_usage, 
+             fill = member_casual)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Station Name", y = "Count",
+       title = "Top 10 Start Stations: Casual rider",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = "#046b99")
+
+all_trips_v2 %>% 
+  group_by(member_casual, start_station_name) %>% 
+  summarise(station_usage = n()) %>% 
+  arrange(desc(station_usage)) %>% 
+  filter(member_casual == "member") %>% 
+  slice(1:10) %>% 
+  ggplot(aes(x = reorder(start_station_name, station_usage), y = station_usage, 
+             fill = member_casual)) +
+  geom_col() +
+  coord_flip() +
+  labs(x = "Station Name", y = "Count",
+       title = "Top 10 Start Stations: Annual rember",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+   theme(legend.position = "none",
+         panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+   scale_fill_manual(values =  "#112e51")
+
+all_trips_v2 %>% 
+  group_by(member_casual, end_station_name) %>% 
+  summarise(station_usage = n()) %>% 
+  arrange(desc(station_usage)) %>% 
+  filter(member_casual == "casual") %>% 
+  slice(2:11) %>% 
+  ggplot(aes(x = reorder(end_station_name, station_usage), y = station_usage, 
+             fill = member_casual)) +
+  geom_col() +
+  coord_flip()+
+  labs(x = "Station Name", y = "Count",
+       title = "Top 10 End Stations: Casual rider",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = "#046b99")
+
+all_trips_v2 %>% 
+  group_by(member_casual, end_station_name) %>% 
+  summarise(station_usage = n()) %>% 
+  arrange(desc(station_usage)) %>% 
+  filter(member_casual == "member") %>% 
+  slice(2:11) %>% 
+  ggplot(aes(x = reorder(end_station_name, station_usage), y = station_usage, 
+             fill = member_casual)) +
+  geom_col() +
+  coord_flip()+
+  labs(x = "Station Name", y = "Count",
+       title = "Top 10 End Stations: Annual member",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(legend.position = "none",
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values =  "#112e51")
+```
+
+Here we can see the top 10 start and end stations are the same for each customer 
+type and casual riders seem to favor the "Streeter Dr & Grand Ave" station. In 
+general annual members usage is more evenly distributed between stations compared to 
+casual riders.
+
+### Analysis of general hourly trends\
+Let's take a general look at how the average ride duration and number of rides
+changes throughout the day.
+
+#### Analysis of the average ride duration for each customer type\
+I will start by looking at how the average ride duration changes throughout a day
+for each customer type.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r general avg hourly}
+options(scipen = 999)
+
+all_trips_v2 %>% 
+  group_by(member_casual, hour) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, hour) %>% 
+  ggplot(aes(x = hour, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(x = "Hour", y = "Ride Duration (s)",
+       title = "Average Ride Duration: Hourly",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5),
+        legend.position = "bottom", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = c("#046b99", "#112e51"),
+                    labels = c("Casual Rider", "Annual Member"))
+```
+
+Here we can see the longest average ride duration for casual riders is around 0400
+and for annual members is around 0300. Casual riders average ride duration is more 
+variable when compared to annual members.
+
+#### Analysis of the number of rides for each customer type\
+Now I will look at how the number of rides changes throughout a day
+for each customer type.
+```{r general num hourly}
+all_trips_v2 %>% 
+  group_by(member_casual, hour) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, hour) %>% 
+  ggplot(aes(x = hour, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(x = "Hour", y = "Number of Rides",
+       title = "Number of Rides: Hourly",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5),
+        legend.position = "bottom", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = c("#046b99", "#112e51"),
+                    labels = c("Casual Rider", "Annual Member"))
+```
+
+Here we can see that the highest number of rides for both casual riders and annual members 
+is around 1700. However, the annual members' data show a second smaller peak around 0800, 
+most likely indicating annual members use bicycles for commuting to work.
+
+### Analysis of hourly trends throughtout the week\
+Let's take a look at how  hourly trends in the average ride duration and number of rides
+changes throughout the week.
+
+#### Analysis of the average ride duration for each customer type\
+First I will look at hourly changes to average ride duration throughout a week
+for each customer type.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r avg hourly week}
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%
+  group_by(member_casual, weekday, hour) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday, hour) %>% 
+  filter(member_casual == "member") %>%
+  ggplot(aes(x = hour, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~weekday) +
+  labs(x = "Hour", y = "Ride Duration (s)",
+       title = "Annual Member Average Ride Duration: Daily",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5),
+        legend.position = "none", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values =  "#112e51") +
+  scale_x_discrete(guide = guide_axis(check.overlap = T))
+
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%
+  group_by(member_casual, weekday, hour) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday, hour) %>% 
+  filter(member_casual == "casual") %>%
+  ggplot(aes(x = hour, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~weekday) +
+  labs(x = "Hour", y = "Ride Duration (s)",
+       title = "Casual Rider Average Ride Duration: Daily",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5),
+        legend.position = "none", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = "#046b99") +
+  scale_x_discrete(guide = guide_axis(check.overlap = T))
+```
+
+Here we can see the for each day longest average ride duration for casual riders is around 0400
+and for annual members is around 0300. While the average ride duration for both groups
+is consistently highest during the early morning hours between 0000 and 0500.
+Casual riders average ride duration is more variable when compared to annual members.
+
+#### Analysis of the number of rides for each customer type\
+Now I will look at hourly changes to number of rides throughout a week
+for each customer type.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r num hourly week}
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%
+  group_by(member_casual, weekday, hour) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday, hour) %>% 
+  filter(member_casual == "member") %>%
+  ggplot(aes(x = hour, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~weekday) +
+  labs(x = "Hour", y = "Number of Rides",
+       title = "Annual Member Number of Rides: Daily",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5),
+        legend.position = "none", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values =  "#112e51") +
+  scale_x_discrete(guide = guide_axis(check.overlap = T))
+
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>%
+  group_by(member_casual, weekday, hour) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday, hour) %>% 
+  filter(member_casual == "casual") %>%
+  ggplot(aes(x = hour, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  facet_wrap(~weekday) +
+  labs(x = "Hour", y = "Number of Rides)",
+       title = "Casual Rider Number of Rides: Daily",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5),
+        legend.position = "none", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = "#046b99") +
+  scale_x_discrete(guide = guide_axis(check.overlap = T))
+```
+
+Here we can see the number of rides for casual riders peaks around 1700 during the 
+weekdays and between 1200 and 1400 on the weekend. While the number of rides for 
+annual members peaks around 1700 during the weekdays and between 1100 and 1400 on
+the weekend. However, the annual members also exhibit a secondary smaller peak around 0800, 
+most likely indicating annual members use bikes for commuting to work.
+
+### Analysis of weekly trends\
+Let's take a look at how the average ride duration and number of rides
+changes from data to day throughout the week.
+
+#### Analysis of the average ride duration for each customer type\
+First I will look at the average ride duration and how it changes throughout the 
+week.
+
+In the below code chunk I use the `ordered()` function to give some order 
+to the days of the week so there appear in a logical order. I then use the 
+`aggregate()` and `mean()` functions to provide the average ride duration for each
+day of the week and for each customer type.
+```{r avg weekly}
+all_trips_v2$day_of_week <- ordered(all_trips_v2$day_of_week, 
+                                    levels = c("Sunday", "Monday", "Tuesday", 
+                                               "Wednesday", "Thursday","Friday",
+                                               "Saturday"))
+
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + 
+            all_trips_v2$day_of_week, FUN = mean)
+```
+
+Its hard to tell if there are any trends in the data from just the table so let's 
+generate a visualization.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r avg weekly viz}
+options(scipen = 999)
+
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday) %>% 
+  ggplot(aes(x = weekday, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(x = "Weekday", y = "Average Duration (s)", 
+       title = "Average Ride Duration: Weekly", 
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5), axis.title.x = element_blank(), 
+        legend.position = "bottom", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = c("#046b99", "#112e51"), 
+                    labels = c("Casual Rider", "Annual Member"))
+```
+
+Here we can see that the average ride duration for both casual riders and annual
+members peaks on the weekend.
+
+#### Analysis of the number of rides for each customer type\
+Now I will take a look at how the number of rides  changes throughout the week. 
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to provide the number of rides for each
+day of the week and for each customer type.
+```{r num weekly}
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n()) %>% 
+  arrange(member_casual, weekday)
+```
+
+Again, its hard to tell if there are any trends in the data from just the table so let's 
+generate a visualization.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r num weekly viz}
+all_trips_v2 %>% 
+  mutate(weekday = wday(started_at, label = TRUE)) %>% 
+  group_by(member_casual, weekday) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, weekday) %>% 
+  ggplot(aes(x = weekday, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(y = "Number of Rides", 
+       title = "Number of Rides: Weekly",
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5), axis.title.x = element_blank(), 
+        legend.position = "bottom", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = c("#046b99", "#112e51"), 
+                    labels = c("Casual Rider", "Annual Member"))
+```
+
+Here we can see that casual riders favor taking rides on the weekends
+while annual members take more rides during the week.
+
+### Analysis of annual trends\
+Now let's take a look to see how average ride duration and number of rides changes 
+throughout the year.
+
+#### Analysis of the average ride duration for each customer type\
+I will start by looking at how the average ride duration changes throughout the 
+year.
+
+In the below code chunk I use the `ordered()` function to give some order 
+to the months so there appear in a logical order and because our data is from April
+2019 to March 2020. I also use the `aggregate()` and `mean()` functions to 
+provide the average ride duration for each month and for each customer type.
+```{r avg annual}
+all_trips_v2$month <- ordered(all_trips_v2$month,
+                                    levels = c("Oct","Nov", "Dec","Jan", "Feb", 
+                                               "Mar", "Apr", "May","Jun", "Jul",
+                                               "Aug", "Sep"))
+
+aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + 
+            all_trips_v2$month, FUN = mean)
+```
+
+Here we can see that casual riders take longer average rides but it is still 
+difficult to identify any trends. Let's generate a visualization to help us.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r avg annual viz}
+all_trips_v2 %>% 
+  group_by(member_casual, month) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, month) %>% 
+  ggplot(aes(x = month, y = average_duration, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(x = "Month", y = "Average Duration (s)", 
+       title = "Average Ride Duration: Annual", 
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5), axis.title.x = element_blank(), 
+        legend.position = "bottom", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = c("#046b99", "#112e51"), 
+                    labels = c("Casual Rider", "Annual Member"))
+```
+
+There doesn't appear to be any trends in the average ride duration for either
+casual riders or annual members.The average ride duration peaks for both in February.
+The average ride duration for casual riders is more variable than the average ride
+duration for annual members.
+
+#### Analysis of the number of rides for each customer type\
+Now I will take a look at how the number of rides changes throughout the year. 
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to provide the number of rides for each
+day of the week and for each customer type.
+```{r num annual}
+all_trips_v2 %>% 
+  group_by(member_casual, month) %>% 
+  summarise(number_of_rides = n()) %>% 
+  arrange(month, member_casual)
+```
+
+Again, its hard to tell if there are any trends in the data from just the table so let's 
+generate a visualization.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r num annual viz}
+all_trips_v2 %>% 
+  group_by(member_casual, month) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(member_casual, month) %>% 
+  ggplot(aes(x = month, y = number_of_rides, fill = member_casual)) +
+  geom_col(position = "dodge") +
+  labs(x = "Month", y = "Number of Rides", 
+       title = "Number of Rides: Annual", 
+       fill = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5), axis.title.x = element_blank(), 
+        legend.position = "bottom", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_fill_manual(values = c("#046b99", "#112e51"), 
+                    labels = c("Casual Rider", "Annual Member"))
+```
+
+Here we can see there is a correlation between the number of rides and seasons for both 
+casual riders and annual members with ridership the highest during the summer and 
+lowest during the winter. Casual riders peak in July and annual members peak in 
+August. February has the fewest rides for both casual riders and annual members.
+
+Let's change the visuzlization to better see seasonal changes.
+
+In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
+and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
+`labs()`, and `theme()` functions to generate and format a visualization.
+```{r num annual viz seasonal}
+all_trips_v2 %>% 
+  group_by(member_casual, date) %>% 
+  summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
+  arrange(date) %>% 
+  ggplot(aes(x = date, y = number_of_rides, color = member_casual)) +
+  geom_smooth(se = F) +
+  labs(x = "Month", y = "Number of Rides",
+       title = "Number of Rides: Annual",
+       color = "Customer Type",
+       caption = "Data source: Divvy (https://divvy-tripdata.s3.amazonaws.com/index.html)") +
+  theme(plot.caption = element_text(size = 5), axis.title.x = element_blank(),
+        legend.position = "none", axis.ticks.x = element_blank(),
+        panel.background = element_rect(fill = "#ffffff", colour = "black",
+                                        size = 2, linetype = "solid"),
+        panel.grid.major = element_line(size = 0.5, linetype = 'solid',
+                                        colour = "#e4e2e0"), 
+        panel.grid.minor = element_line(size = 0.25, linetype = 'solid',
+                                        colour = "#e4e2e0")) +
+  scale_color_manual(values = c("#046b99", "#112e51")) +
+  annotate(geom="text", x = ymd(20210215), y =4750, label = "Annual member",
+           color = "#112e51") +
+  annotate(geom="text", x = ymd(20210415), y =1750, label = "Casual rider",
+           color = "#046b99")
+```
+
+# Insights\
+Based on my analysis I have drawn the following insights:\
+1.	The average ride duration for casual riders is over 2 times the average ride duration for annual members.\
+2.	Annual members account for slightly more than 50% of the total rides.\
+3.	9 stations out of the top 10 start and end stations for casual riders are the same. Casual riders strongly\ favor starting and ending their trips at the “Streeter Dr & Grand Ave” station.\
+4.	9 stations out of the top 10 start and end stations for annual members are the same. \
+5.	In general, the average ride duration for casual riders is highest at 0400.\
+6.	In general, the average ride duration for annual members is highest at 0300.\
+7.	In general, the number of rides for casual riders is lowest at 0400 and highest at 1700.\
+8.	In general, the number of rides for annual members is lowest at 0400 and highest at 1700. Additionally, annual members exhibit a secondary smaller peak around 0800 indicating they are using the bike sharing service to commute to work.\
+9.	Throughout the week the average ride duration for both groups are highest in the early morning hours between 0000 and 0500.\
+10.	Throughout the week the number of rides for casual riders’ peaks around 1700 during the week and between 1200 and 1400 on the weekend.\
+11.	Throughout the week the number of rides for annual members’ peaks around 1700 during the week and between 1100 and 1400 on the weekend. Additionally, the number of rides for annual members exhibits dual peaks at 0800 and 1700 during the weekdays.\
+12.	The average ride duration for both groups peak on the weekends.
+13.	The number of rides for casual riders is highest on the weekend and the number of rides for annual members is highest during the week.\
+14. The number of rides for casual riders exceeds annual members on weekends.\
+15.	The number of rides for both groups can be correlated to seasonal changes with ridership highest during the summer and lowest during the winter.\

@@ -1,7 +1,7 @@
 # cyclistic-bike-share-case-study
 Google Data Analytics Professional Certificate: Capstone Project
 
-This Case Study was completed as the capstone project for the Google Data Analytics Professional Certificate.
+This Case Study was completed as my capstone project for the Google Data Analytics Professional Certificate.
 
 Below is a brief outline of the project.
 

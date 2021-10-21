@@ -175,8 +175,7 @@ all_trips_v2 <- all_trips[!(all_trips$start_station_name == "WATSON TESTING - DI
 all_trips_v3 <-  all_trips_v2[rowSums(is.na(all_trips_v2[ , 0:ncol(all_trips_v2)])) < ncol(all_trips_v2), ]
 ```
 
-The amount of negative 'ride_length' "bad" data removed was minimal and included 3,245 records or 
-approximately 0.0007% of the total records.
+The amount of negative 'ride_length' "bad" data removed was minimal and included 3,245 records or approximately 0.0007% of the total records. The amount of "bad" testing and NA data removed included 523,467 records or approximately 0.1% of the total records.
 
 # Analysis\
 Time to start my analysis! The goal of my analysis is to identify 

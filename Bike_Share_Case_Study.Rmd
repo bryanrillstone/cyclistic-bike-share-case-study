@@ -106,60 +106,6 @@ m11_2020 <- mutate(m11_2020, start_station_id = as.character(start_station_id),
                    end_station_id = as.character(end_station_id))
 ```
 
-### Dropping "bad" data\
-I was having trouble removing "bad" data from teh combined data frame so I will 
-drop "bad" data from each data frame prior to combing them into a single data
-frame.\
-
-There are two scenarios where data is considered "bad". The first is
-when bikes were removed from service for a testing. This is denoted in the
-'start_station_name' column by 'WATSON TESTING - DIVVY'. The second is when 
-the 'ride_length' is negative. More on the second scenario in a later step.\
-
-In the code chunk below I create new dataframes by using operators to 
-select all records that do NOT include 'WATSON TESTING - DIVVY' in the 'start_station_name' column 
-and then drop rows containing all NAs. The new dataframes is are v2 and v3 for each month.
-```{r}
-m10_2020_v2 <- m10_2020[!(m10_2020$start_station_name == "WATSON TESTING - DIVVY"),]
-m10_2020_v3 <-  m10_2020_v2[rowSums(is.na(m10_2020_v2[ , 0:ncol(m10_2020_v2)])) < ncol(m10_2020_v2), ]
-
-m11_2020_v2 <- m11_2020[!(m11_2020$start_station_name == "WATSON TESTING - DIVVY"),]
-m11_2020_v3 <-  m11_2020_v2[rowSums(is.na(m11_2020_v2[ , 0:ncol(m11_2020_v2)])) < ncol(m11_2020_v2), ]
-
-m12_2020_v2 <- m12_2020[!(m12_2020$start_station_name == "WATSON TESTING - DIVVY"),]
-m12_2020_v3 <-  m12_2020_v2[rowSums(is.na(m12_2020_v2[ , 0:ncol(m12_2020_v2)])) < ncol(m12_2020_v2), ]
-
-m01_2021_v2 <- m01_2021[!(m01_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m01_2021_v3 <-  m01_2021_v2[rowSums(is.na(m01_2021_v2[ , 0:ncol(m01_2021_v2)])) < ncol(m01_2021_v2), ]
-
-m02_2021_v2 <- m02_2021[!(m02_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m02_2021_v3 <-  m02_2021_v2[rowSums(is.na(m02_2021_v2[ , 0:ncol(m02_2021_v2)])) < ncol(m02_2021_v2), ]
-
-m03_2021_v2 <- m03_2021[!(m03_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m03_2021_v3 <-  m03_2021_v2[rowSums(is.na(m03_2021_v2[ , 0:ncol(m03_2021_v2)])) < ncol(m03_2021_v2), ]
-
-m04_2021_v2 <- m04_2021[!(m04_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m04_2021_v3 <-  m04_2021_v2[rowSums(is.na(m04_2021_v2[ , 0:ncol(m04_2021_v2)])) < ncol(m04_2021_v2), ]
-
-m05_2021_v2 <- m05_2021[!(m05_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m05_2021_v3 <-  m05_2021_v2[rowSums(is.na(m05_2021_v2[ , 0:ncol(m05_2021_v2)])) < ncol(m05_2021_v2), ]
-
-m06_2021_v2 <- m06_2021[!(m06_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m06_2021_v3 <-  m06_2021_v2[rowSums(is.na(m06_2021_v2[ , 0:ncol(m06_2021_v2)])) < ncol(m06_2021_v2), ]
-
-m07_2021_v2 <- m07_2021[!(m07_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m07_2021_v3 <-  m07_2021_v2[rowSums(is.na(m07_2021_v2[ , 0:ncol(m07_2021_v2)])) < ncol(m07_2021_v2), ]
-
-m08_2021_v2 <- m08_2021[!(m08_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m08_2021_v3 <-  m08_2021_v2[rowSums(is.na(m08_2021_v2[ , 0:ncol(m08_2021_v2)])) < ncol(m08_2021_v2), ]
-
-m09_2021_v2 <- m09_2021[!(m09_2021$start_station_name == "WATSON TESTING - DIVVY"),]
-m09_2021_v3 <-  m09_2021_v2[rowSums(is.na(m09_2021_v2[ , 0:ncol(m09_2021_v2)])) < ncol(m09_2021_v2), ]
-```
-
-The amount of "bad" testing and NA data removed included 523,467 records or 
-approximately 0.1% of the total records.
-
 ### Combine data frames into a single data frame\
 Now that I have corrected the column names and data types inconsistencies its time to
 combine the quarterly dataframes into a single dataframe. This will make the
@@ -209,13 +155,24 @@ all_trips$ride_length <- as.numeric(as.character(all_trips$ride_length))
 ```
 
 ### Dropping "bad" data\
-One last step in the data wrangling, merging, and cleaning process, removing the last of the
-"bad" data. This is where I will drop 'ride_length' data that is negative.
+One last step in the data wrangling, merging, and cleaning process, removing the "bad" data. 
+There are two scenarios where data is considered "bad". The first is when bikes were removed 
+from service for a testing. This is denoted in the 'start_station_name' column by 
+'WATSON TESTING - DIVVY'. The second is when the 'ride_length' is negative. More on the second 
+scenario in a later step.\
 
-In the code chunk below I create a new dataframe by using operators to 
-select all records that have a 'ride_length' less than zero (0). The new dataframe is called all_trips_v2.
+In the code chunk below I create a new dataframe by using operators to select and drop all records 
+that have a 'start_stationname' of WATSON TESTING DIVVY or 'ride_length' less than zero (0). The new 
+dataframe is called all_trips_v2.
+
+Unfortunatly, I was not able to figure out a way to drop rows containing all NAs in the same line 
+of code. In the code chunk below I create another new dataframes without the rows that contain all 
+NAs. The new dataframes is all_trips_v3.
 ```{r new df}
-all_trips_v2 <- all_trips[!(all_trips$ride_length < 0),]
+all_trips_v2 <- all_trips[!(all_trips$start_station_name == "WATSON TESTING - DIVVY" |
+                            all_trips$ride_length < 0),]
+
+all_trips_v3 <-  all_trips_v2[rowSums(is.na(all_trips_v2[ , 0:ncol(all_trips_v2)])) < ncol(all_trips_v2), ]
 ```
 
 The amount of negative 'ride_length' "bad" data removed was minimal and included 3,245 records or 
@@ -235,11 +192,11 @@ In the code chunk below I use the `aggregate()` function in conjunction with
 the `mean()`, `median()`, `max()`, and `min()` functions to calculate basic
 statistical values for each customer type based on the data.
 ```{r basic stats}
-aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = mean)
-aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = median)
-aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = max)
-aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual, FUN = min)
-all_trips_v2 %>% 
+aggregate(all_trips_v3$ride_length ~ all_trips_v3$member_casual, FUN = mean)
+aggregate(all_trips_v3$ride_length ~ all_trips_v3$member_casual, FUN = median)
+aggregate(all_trips_v3$ride_length ~ all_trips_v3$member_casual, FUN = max)
+aggregate(all_trips_v3$ride_length ~ all_trips_v3$member_casual, FUN = min)
+all_trips_v3 %>% 
   group_by(member_casual) %>% 
   summarise(number_of_rides = n())
 ```
@@ -259,7 +216,7 @@ In the below code chunk I use the `group_by()`, `summarize()`, `arrange()`,
 `filter()`, and `slice()` functions to manipulate my data and the `ggplot()`, 
 `geom_col()`, `reorder()`, and `coord_flip()` functions to generate and format visualizations.
 ```{r top 10 stations}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, start_station_name) %>% 
   summarise(station_usage = n()) %>% 
   arrange(desc(station_usage)) %>% 
@@ -282,7 +239,7 @@ all_trips_v2 %>%
                                         colour = "#e4e2e0")) +
   scale_fill_manual(values = "#046b99")
 
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, start_station_name) %>% 
   summarise(station_usage = n()) %>% 
   arrange(desc(station_usage)) %>% 
@@ -305,7 +262,7 @@ all_trips_v2 %>%
                                         colour = "#e4e2e0")) +
    scale_fill_manual(values =  "#112e51")
 
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, end_station_name) %>% 
   summarise(station_usage = n()) %>% 
   arrange(desc(station_usage)) %>% 
@@ -328,7 +285,7 @@ all_trips_v2 %>%
                                         colour = "#e4e2e0")) +
   scale_fill_manual(values = "#046b99")
 
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, end_station_name) %>% 
   summarise(station_usage = n()) %>% 
   arrange(desc(station_usage)) %>% 
@@ -371,7 +328,7 @@ and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`
 ```{r general avg hourly}
 options(scipen = 999)
 
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, hour) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
   arrange(member_casual, hour) %>% 
@@ -401,7 +358,7 @@ variable when compared to annual members.
 Now I will look at how the number of rides changes throughout a day
 for each customer type.
 ```{r general num hourly}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, hour) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
   arrange(member_casual, hour) %>% 
@@ -439,7 +396,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
 `labs()`, and `theme()` functions to generate and format a visualization.
 ```{r avg hourly week}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>%
   group_by(member_casual, weekday, hour) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
@@ -463,7 +420,7 @@ all_trips_v2 %>%
   scale_fill_manual(values =  "#112e51") +
   scale_x_discrete(guide = guide_axis(check.overlap = T))
 
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>%
   group_by(member_casual, weekday, hour) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
@@ -501,7 +458,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
 `labs()`, and `theme()` functions to generate and format a visualization.
 ```{r num hourly week}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>%
   group_by(member_casual, weekday, hour) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
@@ -525,7 +482,7 @@ all_trips_v2 %>%
   scale_fill_manual(values =  "#112e51") +
   scale_x_discrete(guide = guide_axis(check.overlap = T))
 
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>%
   group_by(member_casual, weekday, hour) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
@@ -569,13 +526,13 @@ to the days of the week so there appear in a logical order. I then use the
 `aggregate()` and `mean()` functions to provide the average ride duration for each
 day of the week and for each customer type.
 ```{r avg weekly}
-all_trips_v2$day_of_week <- ordered(all_trips_v2$day_of_week, 
+all_trips_v3$day_of_week <- ordered(all_trips_v3$day_of_week, 
                                     levels = c("Sunday", "Monday", "Tuesday", 
                                                "Wednesday", "Thursday","Friday",
                                                "Saturday"))
 
-aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + 
-            all_trips_v2$day_of_week, FUN = mean)
+aggregate(all_trips_v3$ride_length ~ all_trips_v3$member_casual + 
+            all_trips_v3$day_of_week, FUN = mean)
 ```
 
 Its hard to tell if there are any trends in the data from just the table so let's 
@@ -587,7 +544,7 @@ and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`
 ```{r avg weekly viz}
 options(scipen = 999)
 
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
@@ -620,7 +577,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to provide the number of rides for each
 day of the week and for each customer type.
 ```{r num weekly}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
   summarise(number_of_rides = n()) %>% 
@@ -634,7 +591,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
 `labs()`, and `theme()` functions to generate and format a visualization.
 ```{r num weekly viz}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   mutate(weekday = wday(started_at, label = TRUE)) %>% 
   group_by(member_casual, weekday) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
@@ -673,13 +630,13 @@ to the months so there appear in a logical order and because our data is from Ap
 2019 to March 2020. I also use the `aggregate()` and `mean()` functions to 
 provide the average ride duration for each month and for each customer type.
 ```{r avg annual}
-all_trips_v2$month <- ordered(all_trips_v2$month,
+all_trips_v3$month <- ordered(all_trips_v3$month,
                                     levels = c("Oct","Nov", "Dec","Jan", "Feb", 
                                                "Mar", "Apr", "May","Jun", "Jul",
                                                "Aug", "Sep"))
 
-aggregate(all_trips_v2$ride_length ~ all_trips_v2$member_casual + 
-            all_trips_v2$month, FUN = mean)
+aggregate(all_trips_v3$ride_length ~ all_trips_v3$member_casual + 
+            all_trips_v3$month, FUN = mean)
 ```
 
 Here we can see that casual riders take longer average rides but it is still 
@@ -689,7 +646,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
 `labs()`, and `theme()` functions to generate and format a visualization.
 ```{r avg annual viz}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, month) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
   arrange(member_casual, month) %>% 
@@ -723,7 +680,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to provide the number of rides for each
 day of the week and for each customer type.
 ```{r num annual}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, month) %>% 
   summarise(number_of_rides = n()) %>% 
   arrange(month, member_casual)
@@ -736,7 +693,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
 `labs()`, and `theme()` functions to generate and format a visualization.
 ```{r num annual viz}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, month) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
   arrange(member_casual, month) %>% 
@@ -769,7 +726,7 @@ In the below code chunk I use the `mutate()`, `group_by()`, `summarize()`,
 and `arrange()` functions to manipulate my data and the `ggplot()`, `geom_col()`,
 `labs()`, and `theme()` functions to generate and format a visualization.
 ```{r num annual viz seasonal}
-all_trips_v2 %>% 
+all_trips_v3 %>% 
   group_by(member_casual, date) %>% 
   summarise(number_of_rides = n(), average_duration = mean(ride_length)) %>% 
   arrange(date) %>% 

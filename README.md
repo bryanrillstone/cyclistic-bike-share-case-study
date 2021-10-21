@@ -3,6 +3,8 @@ Google Data Analytics Professional Certificate: Capstone Project
 
 This Case Study was completed as my capstone project for the Google Data Analytics Professional Certificate.
 
+Data: https://www.kaggle.com/bryanrillstone/divvy-trip-data
+
 Below is a brief outline of the project.
 
 1. Ask Phase
